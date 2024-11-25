@@ -1,16 +1,29 @@
-# This is a sample Python script.
+import tkinter as tk
+from tkinter import filedialog
+import pydicom
+import matplotlib.pyplot as plt
+import model_use
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+root = tk.Tk()
+root.withdraw()  # Убираем главное окно
 
+filepath = filedialog.askopenfilename(filetypes=[("DICOM files", "*.dcm")])
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+if filepath:
+    try:
+        dcm_file = pydicom.dcmread(filepath)
 
+        before_segmentation = dcm_file.pixel_array
+        # after_segmentation = model_use.start(before_segmentation)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+        axes[0].imshow(before_segmentation, cmap='autumn')
+        axes[0].set_title("Загруженное изображение")
+
+        axes[1].imshow(before_segmentation, cmap='autumn')
+        axes[1].set_title("Результат обработки")
+        plt.tight_layout()
+        plt.show()
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
