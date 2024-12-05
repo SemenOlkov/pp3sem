@@ -1,8 +1,0 @@
-Pillow
-pandas
-numpy
-matplotlib
-medpy
-scikit-learn
-tensorflow
-keras
