@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="rus">
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка изображения</title>
+</head>
+<body>
+
+<form>
+  <label for="file-upload">Выберите изображение:</label>
+  <input type="file" id="file-upload" name="image">
+  <input type="submit" value="Загрузить">
+</form>
+<div id="imageContainer"></div>
+
+<script>
+  async function uploadImage() {
+    const file = document.getElementById('file-upload').files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/upload_image/', { // URL вашего view
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.image) {
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${data.image}`;
+        document.getElementById('imageContainer').appendChild(img);
+      } else {
+        console.error('Error:', data.error);
+        alert('Ошибка загрузки изображения!'); // Простой алерт об ошибке
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Ошибка загрузки изображения!');
+    }
+  }
+</script>
+</body>
+</html>
