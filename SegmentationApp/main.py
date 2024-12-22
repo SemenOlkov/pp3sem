@@ -38,6 +38,11 @@ def save_correction_image(image, dcm_path):
 def process_dicom(image):
     dcm_file = pydicom.dcmread(image.name)
     before_segmentation = dcm_file.pixel_array
+    if before_segmentation.ndim == 2:
+        before_segmentation = np.expand_dims(before_segmentation, axis=0)
+        before_segmentation = np.expand_dims(before_segmentation, axis=-1)
+
+    before_segmentation = np.expand_dims(before_segmentation, axis=0)
     after_segmentation = model_use.start(before_segmentation)
     pred_8uc1 = (after_segmentation.squeeze() * 255).astype(np.uint8)
     contours_pred, _ = findContours(pred_8uc1, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)
@@ -75,8 +80,7 @@ with gr.Blocks() as iface:
             return image_path, gr.update(value=image_path, visible=True), image_path, dcm_path
 
 
-        process_button.click(update_file_output, inputs=dcm_input,
-                             outputs=[plot_output, file_output, processed_image_state, dcm_path_state])
+        process_button.click(update_file_output, inputs=dcm_input, outputs=[plot_output, file_output, processed_image_state, dcm_path_state])
 
     with gr.Tab("Отправить исправление"):
         with gr.Column():
@@ -84,11 +88,10 @@ with gr.Blocks() as iface:
                                        visible=False)
             correction_image = gr.ImageEditor(label="Последнее обработанное изображение", interactive=True,
                                               height='40%')
-            edited_image_input = gr.File(visible=False)  # Добавленный скрытый инпут
+            edited_image_input = gr.File(visible=False)
             correction_output = gr.Textbox(label="Статус:", visible=False)
             with gr.Row():
-                send_image_button = gr.Button("Применить изменения",
-                                              variant="secondary")  # Кнопка для отправки отредактированного изображения
+                send_image_button = gr.Button("Применить изменения", variant="secondary")
                 save_button = gr.Button("Отправить исправление", variant='primary')
 
 
@@ -123,9 +126,7 @@ with gr.Blocks() as iface:
         file_output.change(update_correction_input, inputs=file_output, outputs=correction_input)
 
         correction_input.change(update_correction_image, inputs=correction_input, outputs=correction_image)
-        send_image_button.click(update_edited_image_input, inputs=correction_image,
-                                outputs=edited_image_input)  # Обработчик нажатия кнопки
-        save_button.click(update_correction_output, inputs=[edited_image_input, dcm_path_state],
-                          outputs=correction_output)  # Используем скрытый инпут в функции
+        send_image_button.click(update_edited_image_input, inputs=correction_image, outputs=edited_image_input)
+        save_button.click(update_correction_output, inputs=[edited_image_input, dcm_path_state], outputs=correction_output)
 
 iface.launch()
