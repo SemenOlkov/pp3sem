@@ -6,8 +6,9 @@ from cv2 import CHAIN_APPROX_SIMPLE, RETR_EXTERNAL, findContours
 import numpy as np
 import tempfile
 import os
-from PIL import Image
+from PIL import Image, ImageDraw
 from datetime import datetime
+
 
 
 def save_correction_image(image, dcm_path):
@@ -31,7 +32,7 @@ def save_correction_image(image, dcm_path):
             with open(save_dcm_path, 'wb') as file:
                 file.write(dcm_file.read())
 
-        return "Изображение отправлено на исправление."
+        return "Изображение отправлено на исправление. Спасибо за вашу помощь"
     return "Не выбрано изображение или не прикреплён DICOM"
 
 
@@ -45,24 +46,39 @@ def process_dicom(image):
     after_segmentation = model_use.start(before_segmentation)
     pred_8uc1 = (after_segmentation.squeeze() * 255).astype(np.uint8)
     contours_pred, _ = findContours(pred_8uc1, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)
-    fig, ax2 = plt.subplots()
-    ax2.axis('off')
-    ax2.imshow(before_segmentation.squeeze(), cmap='gray')
-    ax2.imshow(after_segmentation.squeeze(), alpha=0.5, cmap='autumn')
+
+    back_fig, back_axis = plt.subplots()
+    back_axis.imshow(before_segmentation.squeeze(), cmap='gray')
+
+    # segment_fig, segment_axis = plt.subplots()
+    # segment_axis.imshow(after_segmentation.squeeze(), alpha=0.5, cmap='autumn')
+
+    main_fig, axis = plt.subplots()
+    axis.axis('off')
+    axis.imshow(before_segmentation.squeeze(), cmap='gray')
+    axis.imshow(after_segmentation.squeeze(), alpha=0.5, cmap='autumn')
     for contour in contours_pred:
-        ax2.plot(contour[:, 0, 0], contour[:, 0, 1], 'r', linewidth=2)
+        axis.plot(contour[:, 0, 0], contour[:, 0, 1], 'r', linewidth=2)
+        # segment_axis.plot(contour[:, 0, 0], contour[:, 0, 1], 'r', linewidth=2)
 
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-        fig.savefig(tmp_file.name, bbox_inches='tight')
+        main_fig.savefig(tmp_file.name, bbox_inches='tight')
         image_path = tmp_file.name
 
-    plt.close(fig)
-    return image_path, image.name
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        back_fig.savefig(tmp_file.name, bbox_inches='tight')
+        back_path = tmp_file.name
+
+    plt.close(main_fig)
+    plt.close(back_fig)
+
+    return image_path, back_path, image.name
 
 
 with gr.Blocks() as iface:
     processed_image_state = gr.State(value=None)
     dcm_path_state = gr.State(value=None)
+    back_path_state = gr.State(value=None)
     with gr.Tab("Обводка печени на снимках компьютерной томографии"):
         with gr.Row():
             with gr.Column(scale=1):
@@ -75,20 +91,23 @@ with gr.Blocks() as iface:
 
 
         def update_file_output(image):
-            image_path, dcm_path = process_dicom(image)
-            return image_path, gr.update(value=image_path, visible=True), image_path, dcm_path
+            image_path, back_path, dcm_path = process_dicom(image)
+            return image_path, gr.update(value=back_path), image_path, dcm_path, back_path  # Возвращаем back_path
 
 
-        process_button.click(update_file_output, inputs=dcm_input, outputs=[plot_output, file_output, processed_image_state, dcm_path_state])
+        process_button.click(update_file_output, inputs=dcm_input, outputs=[plot_output, file_output, processed_image_state, dcm_path_state, back_path_state])
 
     with gr.Tab("Отправить исправление"):
+        gr.Markdown("### Если обводка оказалась некорректной, вы можете отправить исправление здесь. Пожалуйста, закрасьте ВСЮ печень на снимке ниже любым цветом.")
         with gr.Column():
             correction_input = gr.File(label="Загрузите изображение для исправления", file_types=['image'],
                                        visible=False)
-            correction_image = gr.ImageEditor(label="Последнее обработанное изображение", interactive=True,
-                                              height='40%')
+            correction_image = gr.ImageEditor(label="Последнее отправленное изображение", interactive=True,
+                                              height='40%', sources=[])
             edited_image_input = gr.File(visible=False)
+            original_image_input = gr.File(visible=False)
             correction_output = gr.Textbox(label="Статус:", visible=False)
+            download_output = gr.File(label="Скачать измененное изображение", file_types=['.png'], visible=False)
             with gr.Row():
                 send_image_button = gr.Button("Применить изменения", variant="secondary")
                 save_button = gr.Button("Отправить исправление", variant='primary')
@@ -109,10 +128,18 @@ with gr.Blocks() as iface:
 
 
         def update_edited_image_input(edited_image):
-            if edited_image and isinstance(edited_image, dict) and 'composite' in edited_image:
-                composite_image = edited_image['composite']
+            if edited_image and isinstance(edited_image,
+                                           dict) and 'layers' in edited_image and 'composite' in edited_image:
+                composite = np.array(edited_image['composite'])
+                layers = np.array(edited_image['layers'][0])
+                black_background = np.zeros_like(composite, dtype=np.uint8)
+                black_background[:] = [0, 0, 0, 255]
+                masked_image = np.where(layers == [0, 0, 0, 0], black_background, composite).astype(np.uint8)
+                white_color = [255, 255, 255, 255]
+                masked_image[np.any(masked_image != [0, 0, 0, 255], axis=-1)] = white_color
+
                 try:
-                    pil_image = Image.fromarray(composite_image.astype(np.uint8))
+                    pil_image = Image.fromarray(masked_image)
                     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
                         pil_image.save(tmp_file.name)
                         return tmp_file.name
@@ -120,7 +147,6 @@ with gr.Blocks() as iface:
                     print(f"Ошибка при обработке изображения: {e}")
                     return None
             return None
-
 
         file_output.change(update_correction_input, inputs=file_output, outputs=correction_input)
 
