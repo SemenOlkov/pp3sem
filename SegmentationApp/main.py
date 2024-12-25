@@ -41,7 +41,6 @@ def process_dicom(image):
     if before_segmentation.ndim == 2:
         before_segmentation = np.expand_dims(before_segmentation, axis=0)
         before_segmentation = np.expand_dims(before_segmentation, axis=-1)
-
     before_segmentation = np.expand_dims(before_segmentation, axis=0)
     after_segmentation = model_use.start(before_segmentation)
     pred_8uc1 = (after_segmentation.squeeze() * 255).astype(np.uint8)
