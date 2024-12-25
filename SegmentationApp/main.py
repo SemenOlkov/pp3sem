@@ -32,7 +32,7 @@ def save_correction_image(image, dcm_path):
             with open(save_dcm_path, 'wb') as file:
                 file.write(dcm_file.read())
 
-        return "Изображение отправлено на исправление. Спасибо за вашу помощь"
+        return "Изображение отправлено на исправление. Спасибо за вашу помощь."
     return "Не выбрано изображение или не прикреплён DICOM"
 
 
@@ -98,7 +98,7 @@ with gr.Blocks() as iface:
         process_button.click(update_file_output, inputs=dcm_input, outputs=[plot_output, file_output, processed_image_state, dcm_path_state, back_path_state])
 
     with gr.Tab("Отправить исправление"):
-        gr.Markdown("### Если обводка оказалась некорректной, вы можете отправить исправление здесь. Пожалуйста, закрасьте ВСЮ печень на снимке ниже любым цветом.")
+        gr.Markdown("### Если обводка оказалась некорректной, вы можете отправить исправление здесь. Пожалуйста, закрасьте ВСЮ печень на снимке ниже любым цветом кроме чёрного.")
         with gr.Column():
             correction_input = gr.File(label="Загрузите изображение для исправления", file_types=['image'],
                                        visible=False)
