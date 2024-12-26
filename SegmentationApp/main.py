@@ -6,9 +6,10 @@ from cv2 import CHAIN_APPROX_SIMPLE, RETR_EXTERNAL, findContours
 import numpy as np
 import tempfile
 import os
-from PIL import Image, ImageDraw
+from PIL import Image
 from datetime import datetime
-
+import shutil
+import threading
 
 
 def save_correction_image(image, dcm_path):
@@ -154,4 +155,31 @@ with gr.Blocks() as iface:
         send_image_button.click(update_edited_image_input, inputs=correction_image, outputs=edited_image_input)
         save_button.click(update_correction_output, inputs=[edited_image_input, dcm_path_state], outputs=correction_output)
 
-iface.launch()
+
+def create_download_interface():
+    with gr.Blocks(title="Скачать corrections") as download_iface:
+        download_button = gr.Button("Скачать папку corrections", variant="primary")
+        status_output = gr.Textbox(label="Статус:", visible=False)
+        download_output = gr.File(label="Файл для скачивания", visible=False)
+
+
+        def create_archive():
+            if not os.path.exists('corrections'):
+                return gr.update(value="Папка corrections не найдена.", visible=True), gr.update(visible=False)
+
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
+                shutil.make_archive(tmp_file.name[:-4], 'zip', 'corrections')
+                return gr.update(value="Скачайте отправленные исправления по ссылке ниже.", visible=True), gr.update(value=tmp_file.name, visible=True)
+
+        download_button.click(create_archive, inputs=[], outputs=[status_output, download_output])
+    return download_iface
+
+def launch_gradio_app(app, port, share=False):
+    app.launch(server_port=port, share=share)
+
+
+download_interface = create_download_interface()
+if __name__ == '__main__':
+    threading.Thread(target=launch_gradio_app, args=(iface, 7860), daemon=True).start()
+    threading.Thread(target=launch_gradio_app, args=(download_interface, 7861), daemon=True).start()
+    threading.Event().wait()
