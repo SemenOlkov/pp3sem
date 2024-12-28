@@ -33,6 +33,7 @@ class CustomTheme(gr.Theme):
         self.button_large_radius = "12px"
         self.input_background_fill = "#0E8E70"
         self.input_border_color = "#0E8E70"
+        
 
 
 theme = CustomTheme()
@@ -130,8 +131,7 @@ with gr.Blocks(theme=theme, css_paths='static/styles/styles.css') as iface:
         with gr.Column():
             correction_input = gr.File(label="Загрузите изображение для исправления", file_types=['image'],
                                        visible=False)
-            correction_image = gr.ImageEditor(label="Последнее отправленное изображение", interactive=True,
-                                              height='40%', sources=[], elem_classes='output')
+            correction_image = gr.ImageEditor(label="Последнее отправленное изображение", interactive=True, sources=[], elem_classes='output', layers=False, show_fullscreen_button=True)
             edited_image_input = gr.File(visible=False)
             original_image_input = gr.File(visible=False)
             correction_output = gr.Markdown('', visible=False)
