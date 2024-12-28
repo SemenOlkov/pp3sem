@@ -1,0 +1,133 @@
+/* @font-face {
+    font-family: 'Noto';
+    src: url('fonts/NotoSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+button {
+    font-family: 'Noto', Courier, monospace;
+} */
+
+
+button:focus {
+    color: #549888;
+    background-color: white;
+    border-color: #83FFE2;
+    border-width: 6px;
+}
+
+button:active {
+    color: white;
+    background-color: #0C6550;
+    border-color: black;
+    border-width: 1.5px;
+}
+
+
+.markdown {
+    background-color: #1ca483;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    /* font-family: 'Noto'; */
+}
+
+
+.tab-container {
+    button {
+        color: #19A987;
+        background-color: #D7FAF2;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 44px;
+        font-family: 'IBM Plex Sans', 'ui-sans-serif', 'system-ui', sans-serif;
+        border-bottom: none;
+    }
+
+    button:hover {
+        color: #19A987; 
+    }
+
+    button.selected {
+        background-color: #19A987;
+        color: #D7FAF2;
+        border-bottom: none !important;
+    }
+
+    /* button.selected:hover {
+        background-color: #0C6550;
+    } */
+
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+
+.tab-container > *:nth-child(odd) {
+    border-radius: 12px 0 0 12px;
+}
+
+.tab-container > *:nth-child(even) {
+     border-radius: 0 12px 12px 0;
+}
+
+.input {
+    padding-top: 64px;
+    padding-right: 16px;
+    padding-bottom: 16px;
+    padding-left: 16px;
+    background-color: #A5DCF0;
+    border-radius: 16px;
+    button {
+        background-color: white;
+        border-radius: 10px;
+    }
+}
+
+.file-preview-holder {
+    min-height: 15px;
+    border-radius: 8px;
+    border: 1px black;
+}
+
+.output {
+    padding-top: 20px;
+    padding-right: 124px;
+    padding-bottom: 20px;
+    padding-left: 124px;
+    background-color: #A5DCF0;
+    border-radius: 16px;
+    min-height: 380px;
+}
+
+.unpadded_box {
+    background-color: white;
+    border-radius: 10px;
+    min-height: 320px;
+    min-width: 340px;
+    align-self: center;
+    justify-self: center;
+}
+
+.image-container {
+    background-color: white;
+    border-radius: 10px;
+    min-height: 320px;
+    min-width: 340px;
+    align-self: center;
+    justify-self: center;
+}
+
+label {
+    display: None;
+}
+
