@@ -3,7 +3,7 @@ import tensorflow
 
 
 def start(img):
-    model = tensorflow.keras.models.load_model('models/curr_model.keras', custom_objects={'dice_coef_loss': None, 'dice_coef': None})
+    model = tensorflow.keras.models.load_model('static/models/curr_model.keras', custom_objects={'dice_coef_loss': 1, 'dice_coef': 0})
     img = img.astype('float32') / 255.0
     mean = np.mean(img)
     std = np.std(img)
