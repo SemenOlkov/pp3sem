@@ -107,6 +107,7 @@ button:active {
     background-color: #A5DCF0;
     border-radius: 16px;
     min-height: 380px;
+    max-width: 650px;
 }
 
 .unpadded_box {
