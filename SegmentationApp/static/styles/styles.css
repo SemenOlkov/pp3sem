@@ -129,6 +129,9 @@ button:active {
 }
 
 label {
-    display: None;
+    display: none;
 }
 
+.selected.svelte-1tcem6n.svelte-1tcem6n:after {
+    display: none;
+}
