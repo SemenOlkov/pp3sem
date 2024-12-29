@@ -102,7 +102,7 @@ def process_dicom(image):
     return image_path, back_path, image.name
 
 
-with gr.Blocks(theme=theme, css_paths='static/styles/styles.css') as iface:
+with gr.Blocks(title='Сервис по обработке КТ снимков', theme=theme, css_paths='static/styles/styles.css') as iface:
     processed_image_state = gr.State(value=None)
     dcm_path_state = gr.State(value=None)
     back_path_state = gr.State(value=None)
