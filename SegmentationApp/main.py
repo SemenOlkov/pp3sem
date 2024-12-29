@@ -33,7 +33,6 @@ class CustomTheme(gr.Theme):
         self.button_large_radius = "12px"
         self.input_background_fill = "#0E8E70"
         self.input_border_color = "#0E8E70"
-        
 
 
 theme = CustomTheme()
@@ -176,27 +175,6 @@ with gr.Blocks(theme=theme, css_paths='static/styles/styles.css') as iface:
                 return gr.update(value=image_path)
 
 
-        # def update_edited_image_input(edited_image):
-        #     if edited_image and isinstance(edited_image,
-        #                                    dict) and 'layers' in edited_image and 'composite' in edited_image:
-        #         composite = np.array(edited_image['composite'])
-        #         layers = np.array(edited_image['layers'][0])
-        #         black_background = np.zeros_like(composite, dtype=np.uint8)
-        #         black_background[:] = [0, 0, 0, 255]
-        #         masked_image = np.where(layers == [0, 0, 0, 0], black_background, composite).astype(np.uint8)
-        #         white_color = [255, 255, 255, 255]
-        #         masked_image[np.any(masked_image != [0, 0, 0, 255], axis=-1)] = white_color
-        #
-        #         try:
-        #             pil_image = Image.fromarray(masked_image)
-        #             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-        #                 pil_image.save(tmp_file.name)
-        #                 return tmp_file.name
-        #         except Exception as e:
-        #             print(f"Ошибка при обработке изображения: {e}")
-        #             return None
-        #     return None
-
         def send_download_link(edited_image):
             if edited_image and isinstance(edited_image,
                                            dict) and 'layers' in edited_image and 'composite' in edited_image:
@@ -218,12 +196,12 @@ with gr.Blocks(theme=theme, css_paths='static/styles/styles.css') as iface:
         save_button.click(update_correction_output, inputs=[correction_image, dcm_path_state], outputs=correction_output)
         download_button.click(send_download_link, inputs=correction_image, outputs=download_output)
 
+
 def create_download_interface():
     with gr.Blocks(title="Скачать corrections", theme=theme) as download_iface:
-        download_button = gr.Button("Скачать папку corrections", variant="primary")
+        download_adm_button = gr.Button("Скачать папку corrections", variant="primary")
         status_output = gr.Textbox(label="Статус:", visible=False)
-        download_output = gr.File(label="Файл для скачивания", visible=False)
-
+        download_adm_output = gr.File(label="Файл для скачивания", visible=False)
 
         def create_archive():
             if not os.path.exists('corrections'):
@@ -233,7 +211,7 @@ def create_download_interface():
                 shutil.make_archive(tmp_file.name[:-4], 'zip', 'corrections')
                 return gr.update(value="Скачайте отправленные исправления по ссылке ниже.", visible=True), gr.update(value=tmp_file.name, visible=True)
 
-        download_button.click(create_archive, inputs=[], outputs=[status_output, download_output])
+        download_adm_button.click(create_archive, inputs=[], outputs=[status_output, download_adm_output])
     return download_iface
 
 
@@ -243,6 +221,6 @@ def launch_gradio_app(app, port, share=False):
 
 download_interface = create_download_interface()
 if __name__ == '__main__':
-    threading.Thread(target=launch_gradio_app, args=(iface, 7860), daemon=True).start()
-    threading.Thread(target=launch_gradio_app, args=(download_interface, 7861), daemon=True).start()
+    threading.Thread(target=launch_gradio_app, args=(iface, 7862), daemon=True).start()
+    threading.Thread(target=launch_gradio_app, args=(download_interface, 7863), daemon=True).start()
     threading.Event().wait()
