@@ -221,6 +221,6 @@ def launch_gradio_app(app, port, share=False):
 
 download_interface = create_download_interface()
 if __name__ == '__main__':
-    threading.Thread(target=launch_gradio_app, args=(iface, 7862), daemon=True).start()
-    threading.Thread(target=launch_gradio_app, args=(download_interface, 7863), daemon=True).start()
+    threading.Thread(target=launch_gradio_app, args=(iface, 7860, True), daemon=True).start()
+    threading.Thread(target=launch_gradio_app, args=(download_interface, 7861), daemon=True).start()
     threading.Event().wait()
