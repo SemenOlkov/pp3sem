@@ -13,9 +13,11 @@ import threading
 
 
 class CustomTheme(gr.Theme):
+    """
+        Кастомная тема для Gradio.
+    """
     def __init__(self):
         super().__init__()
-        # self.body_background_fill = "linear-gradient(to right, #f8f9fa, #e9ecef)"
         self.text_color = "#7D7D7D"
         self.button_primary_background_fill = "white"
         self.button_secondary_background_fill = "#19A987"
@@ -39,6 +41,16 @@ theme = CustomTheme()
 
 
 def save_correction_image(image, dcm_path):
+    """
+        Сохраняет изображение с исправлением и соответствующий DICOM файл.
+
+        Args:
+            image (str): Путь к файлу изображения с исправлением.
+            dcm_path (str): Путь к DICOM файлу.
+
+        Returns:
+            str: HTML строка с сообщением об успехе или ошибке.
+        """
     if image and dcm_path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -49,12 +61,12 @@ def save_correction_image(image, dcm_path):
         os.makedirs('corrections/ground', exist_ok=True)
         os.makedirs('corrections/DICOM', exist_ok=True)
 
-        # Save image
+        # Сохраняем исправление
         with open(image, 'rb') as file_data:
             with open(save_image_path, 'wb') as file:
                 file.write(file_data.read())
 
-        # Save DICOM
+        # Сохраняем DICOM
         with open(dcm_path, 'rb') as dcm_file:
             with open(save_dcm_path, 'wb') as file:
                 file.write(dcm_file.read())
@@ -64,6 +76,15 @@ def save_correction_image(image, dcm_path):
 
 
 def process_dicom(image):
+    """
+        Обрабатывает DICOM изображение, выполняет сегментацию и возвращает пути к изображениям с обводкой.
+
+        Args:
+            image (gradio.File): Объект Gradio, представляющий загруженный DICOM файл.
+
+        Returns:
+            tuple: Кортеж, содержащий пути к изображениям (с обводкой и исходным), и путь к DICOM файлу.
+    """
     dcm_file = pydicom.dcmread(image.name)
     before_segmentation = dcm_file.pixel_array
     main_fig, axis = plt.subplots()
@@ -73,7 +94,7 @@ def process_dicom(image):
         before_segmentation = np.expand_dims(before_segmentation, axis=0)
         before_segmentation = np.expand_dims(before_segmentation, axis=-1)
     before_segmentation = np.expand_dims(before_segmentation, axis=0)
-    after_segmentation = model_use.start(before_segmentation)
+    after_segmentation = model_use.start(before_segmentation)  # обработка снимка с использованиме
     pred_8uc1 = (after_segmentation.squeeze() * 255).astype(np.uint8)
     contours_pred, _ = findContours(pred_8uc1, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)
 
@@ -81,12 +102,9 @@ def process_dicom(image):
     back_axis.axis('off')
     back_axis.imshow(before_segmentation.squeeze(), cmap='gray')
 
-    # segment_fig, segment_axis = plt.subplots()
-    # segment_axis.imshow(after_segmentation.squeeze(), alpha=0.5, cmap='autumn')
-    # axis.imshow(after_segmentation.squeeze(), alpha=0.5, cmap='autumn')
+    # обводка по контуру сегментации
     for contour in contours_pred:
         axis.plot(contour[:, 0, 0], contour[:, 0, 1], 'r', linewidth=2)
-        # segment_axis.plot(contour[:, 0, 0], contour[:, 0, 1], 'r', linewidth=2)
 
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
         main_fig.savefig(tmp_file.name, bbox_inches='tight')
@@ -120,8 +138,18 @@ with gr.Blocks(title='Сервис по обработке КТ снимков',
 
 
         def update_file_output(image):
+            """
+                Обновляет вывод изображения после обработки DICOM файла.
+
+                Args:
+                    image (gradio.File): Объект Gradio, представляющий загруженный DICOM файл.
+
+                Returns:
+                    tuple: Кортеж, содержащий путь к обработанному изображению, обновление пути к исходному изображению,
+                        путь к обработанному изображению, путь к DICOM файлу, путь к исходному изображению.
+            """
             image_path, back_path, dcm_path = process_dicom(image)
-            return image_path, gr.update(value=back_path), image_path, dcm_path, back_path  # Возвращаем back_path
+            return image_path, gr.update(value=back_path), image_path, dcm_path, back_path
 
         process_button.click(update_file_output, inputs=dcm_input, outputs=[plot_output, file_output, processed_image_state, dcm_path_state, back_path_state])
 
@@ -136,7 +164,6 @@ with gr.Blocks(title='Сервис по обработке КТ снимков',
             correction_output = gr.Markdown('', visible=False)
             download_output = gr.File(label="Скачать измененное изображение", file_types=['.png'], visible=False)
             with gr.Row():
-                # send_image_button = gr.Button("Применить изменения", variant='primary')
                 save_button = gr.Button("Отправить исправление", variant='primary')
                 with gr.Column():
                     download_button = gr.Button("Скачать изображение", variant='secondary')
@@ -144,10 +171,28 @@ with gr.Blocks(title='Сервис по обработке КТ снимков',
 
 
         def update_correction_image(image):
+            """
+                Обновляет отображение изображения в редакторе.
+
+                Args:
+                    image: Путь к изображению
+                Returns:
+                    str:  Путь к изображению
+            """
             return image
 
 
         def update_correction_output(edited_image, dcm_path):
+            """
+                Обрабатывает отредактированное изображение, сохраняет исправление и возвращает сообщение.
+
+                Args:
+                    edited_image (dict): Словарь с данными отредактированного изображения.
+                    dcm_path (str): Путь к DICOM файлу.
+
+                Returns:
+                    gradio.Markdown: Обновленный объект Markdown с сообщением об успехе или ошибке.
+            """
             if edited_image and isinstance(edited_image,
                                            dict) and 'layers' in edited_image and 'composite' in edited_image:
                 composite = np.array(edited_image['composite'])
@@ -171,11 +216,28 @@ with gr.Blocks(title='Сервис по обработке КТ снимков',
 
 
         def update_correction_input(image_path):
+            """
+                Обновляет ввод для загрузки изображения, если он получен.
+
+                Args:
+                     image_path: Путь к изображению
+                Returns:
+                    gradio.update: Обновленный объект ввода для загрузки изображения
+            """
             if image_path:
                 return gr.update(value=image_path)
 
 
         def send_download_link(edited_image):
+            """
+                Создает временный файл с отредактированным изображением и возвращает ссылку на его скачивание.
+
+                Args:
+                    edited_image (dict): Словарь с данными отредактированного изображения.
+
+                Returns:
+                    gradio.File: Обновленный объект File с путем к временному файлу для скачивания.
+            """
             if edited_image and isinstance(edited_image,
                                            dict) and 'layers' in edited_image and 'composite' in edited_image:
                 edited_image = np.array(edited_image['composite'])
@@ -192,18 +254,29 @@ with gr.Blocks(title='Сервис по обработке КТ снимков',
         file_output.change(update_correction_input, inputs=file_output, outputs=correction_input)
 
         correction_input.change(update_correction_image, inputs=correction_input, outputs=correction_image)
-        # send_image_button.click(update_edited_image_input, inputs=correction_image, outputs=edited_image_input)
         save_button.click(update_correction_output, inputs=[correction_image, dcm_path_state], outputs=correction_output)
         download_button.click(send_download_link, inputs=correction_image, outputs=download_output)
 
 
 def create_download_interface():
+    """
+        Создает интерфейс для скачивания архива с исправлениями.
+
+        Returns:
+            gradio.Blocks: Gradio интерфейс для скачивания архива.
+    """
     with gr.Blocks(title="Скачать corrections", theme=theme) as download_iface:
         download_adm_button = gr.Button("Скачать папку corrections", variant="primary")
         status_output = gr.Textbox(label="Статус:", visible=False)
         download_adm_output = gr.File(label="Файл для скачивания", visible=False)
 
         def create_archive():
+            """
+                Создает zip-архив папки 'corrections' и возвращает статус и ссылку на скачивание.
+
+                Returns:
+                    tuple: Кортеж, содержащий обновленный текстовый вывод со статусом и путь к zip-архиву.
+            """
             if not os.path.exists('corrections'):
                 return gr.update(value="Папка corrections не найдена.", visible=True), gr.update(visible=False)
 
@@ -216,6 +289,14 @@ def create_download_interface():
 
 
 def launch_gradio_app(app, port, share=False):
+    """
+        Запускает Gradio приложение на указанном порту.
+
+        Args:
+             app (gradio.Blocks): Gradio интерфейс, который необходимо запустить.
+             port (int): Порт для запуска приложения.
+             share (bool, optional): Указывает, нужно ли создавать публичную ссылку на приложение. Базовое значение False.
+    """
     app.launch(server_port=port, share=share)
 
 
